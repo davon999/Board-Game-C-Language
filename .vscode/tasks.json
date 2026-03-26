@@ -5,7 +5,7 @@
         {
             "label": "Make project",
             "type": "shell",
-            "command": "make clean; make",
+            "command": "cd src && make clean 2> /dev/null; clear; make",
             "group": {
                 "kind": "build",
                 "isDefault": true
