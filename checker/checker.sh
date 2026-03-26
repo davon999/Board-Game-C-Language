@@ -43,8 +43,8 @@ rm -f "Pas_2/test_2_2.txt"
 rm -f "Pas_3/test_3.txt"
 rm -f "./Upload_Tema_Moodle"
 
-/bin/bash -c 'cd ../src && make clean' # Clean
-/bin/bash -c 'cd ../src && make'       # Build
+/bin/bash -c 'cd .. && make clean' # Clean
+/bin/bash -c 'cd .. && make'       # Build
 # Run to write the output (directly with Valgrind)
 timeout 60 valgrind --leak-check=full \
 --show-leak-kinds=all \
@@ -94,7 +94,7 @@ fi
 # echo
 
 echo -e "Observatie: 10pt vor fi adaugate ulterior pentru documentatie"
-zip -r Upload_Tema_Moodle.zip * >/dev/null && echo "Arhivat cu succes!" || echo "Arhivarea a esuat!"
+/bin/bash -c 'cd ../src && zip -r ../checker/Upload_Tema_Moodle.zip *' >/dev/null && echo "Arhivat cu succes!" || echo "Arhivarea a esuat!"
 echo -e "\nTotal: $points/120pt"
 echo
 
