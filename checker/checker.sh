@@ -43,10 +43,10 @@ rm -f "Pas_2/test_2_2.txt"
 rm -f "Pas_3/test_3.txt"
 rm -f "./Upload_Tema_Moodle"
 
-make clean # Clean
-make       # Build
+/bin/bash -c 'cd ../src && make clean' # Clean
+/bin/bash -c 'cd ../src && make'       # Build
 # Run to write the output (directly with Valgrind)
-valgrind --leak-check=full \
+timeout 60 valgrind --leak-check=full \
 --show-leak-kinds=all \
 --track-origins=yes \
 --verbose \
@@ -73,10 +73,18 @@ add_points 4
 compare_files "Pas_3/test_3.txt" "Pas_3/ref_test_3.txt"
 add_points 5
 
-if [ "$points" -ge 10 ]; then
+if [ "$valgrind_exit_code" -eq 124 ]; then
+    echo "Execuția a depășit timpul limita de 60 de secunde, verificați dacă există bucle infinite sau optimizați codul pentru a rula mai rapid!"
+    echo -e "\nTotal: 0/120pt"
+    exit
+elif [ "$valgrind_exit_code" -eq 127 ]; then
+    echo "Valgrind nu este instalat, instalati Valgrind pentru a putea continua procesul de evaluare!"
+    echo -e "\nTotal: 0/120pt"
+    exit
+elif [ "$points" -ge 10 ]; then
 	if [ "$valgrind_exit_code" -eq 1 ]; then
 		echo "S-au detectat scurgeri de memorie, NU veți primi 10 puncte in plus!"
-	else
+    else
 		echo "Nu s-au detectat scurgeri de memorie, veți primi 10 puncte in plus."
         points=$(($points+10))
 	fi
@@ -86,8 +94,8 @@ fi
 # echo
 
 echo -e "Observatie: 10pt vor fi adaugate ulterior pentru documentatie"
+zip -r Upload_Tema_Moodle.zip * >/dev/null && echo "Arhivat cu succes!" || echo "Arhivarea a esuat!"
 echo -e "\nTotal: $points/120pt"
 echo
 
-zip -r Upload_Tema_Moodle.zip * >/dev/null && echo "Arhivat cu succes!" || echo "Arhivarea a esuat!"
-echo
+
