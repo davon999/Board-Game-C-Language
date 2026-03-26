@@ -3,4 +3,3 @@
 Completati aici documentatia proiectului:
     - descriere funcționlitatea în mare
     - motivație soluțiile alese, complexități
-
