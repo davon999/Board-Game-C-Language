@@ -27,7 +27,7 @@ build:
 checker:
     stage: test
     image:
-        name: gitlab.cs.pub.ro:5050/programming-homeworks/tema-pa-ab_2026-public
+        name: gitlab.cs.pub.ro:5050/programming-homeworks/tema-pa-2026-public
     script:
         - echo ""
 
