@@ -9,7 +9,7 @@ cd "$(dirname "$0")" || exit 1
 RED='\033[0;31m'
 NC='\033[0m'
 
-DEFAULT_IMAGE_NAME="programming-homeworks/tema-pa-ab_2026-public"
+DEFAULT_IMAGE_NAME="programming-homeworks/tema-pa-2026-public"
 DEFAULT_TAG='latest'
 DEFAULT_REGISTRY='gitlab.cs.pub.ro:5050'
 
