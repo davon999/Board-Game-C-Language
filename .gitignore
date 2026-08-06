@@ -1,2 +1,14 @@
-checker/main
-Upload_Tema_Moodle.zip
+# executabile
+main
+src/main
+
+# fisiere temporare
+*.out
+*.o
+
+# arhive
+*.zip
+
+# rezultate checker
+checker/valgrind-out.txt
+checker/Upload_Tema_Moodle*/

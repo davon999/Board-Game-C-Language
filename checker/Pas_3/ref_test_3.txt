@@ -1,8 +1,8 @@
 J7 - 99.80: [0, 0] -- [0, 1] -- [1, 1] -- [1, 2] -- [2, 2] -- [2, 1] -- [2, 0]
 J4 - 79.90: [0, 0] -- [0, 1] -- [1, 1] -- [1, 2] -- [0, 2]
 J9 - 8.60: [3, 4] -- [3, 3] -- [2, 3] -- [1, 3] -- [1, 4] -- [0, 4] -- [0, 5]
-J5 - 28.30: [1, 1] -- [1, 2] -- [2, 2] -- [3, 2] -- [3, 3] -- [3, 4]
-J0: Nu nu s-a putut efectua misiunea
-J1: Nu nu s-a putut efectua misiunea
-J2: Nu nu s-a putut efectua misiunea
-J8: Nu nu s-a putut efectua misiunea
+J5 - 43.30: [1, 1] -- [1, 2] -- [2, 2] -- [2, 3] -- [3, 3] -- [3, 4]
+J0: Nu s-a putut efectua misiunea
+J1: Nu s-a putut efectua misiunea
+J2: Nu s-a putut efectua misiunea
+J8: Nu s-a putut efectua misiunea
