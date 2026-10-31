@@ -4,7 +4,7 @@ Completati aici documentatia proiectului:
     - descriere funcționlitatea în mare
     - motivație soluțiile alese, complexități
 
-Poturlu David-Andrei 311AB
+Poturlu David-Andrei
 
 Structuri de date utilizate:
 
