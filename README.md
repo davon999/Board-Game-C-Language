@@ -1,92 +1,175 @@
-# Tema-PA 2026
 
-Completati aici documentatia proiectului:
-    - descriere funcționlitatea în mare
-    - motivație soluțiile alese, complexități
+Board Game în C
 
-Poturlu David-Andrei 311AB
+O simulare de board-game scrisă în C: jucătorii se înscriu, se luptă într-un turneu eliminatoriu construit pe arbori binari, iar câștigătorii primesc misiuni pe o hartă cu obstacole, unde drumul cel mai scurt este găsit cu algoritmul A*.
 
-Structuri de date utilizate:
+Proiectul este construit în jurul structurilor de date clasice, implementate de la zero: coadă, stivă, arbore binar de căutare, arbore de turneu și min-heap.
+Cum funcționează
 
--Coada (lista simplu inlantuita)
-    am implementat coada cu o lista simplu inlantuita, pastrand pointerii
-    front si rear ca sa pot insera la final si sa pot extrage de la inceput in 0(1)
+Simularea se desfășoară în trei etape.
+1. Înscrierea jucătorilor, harta și misiunile
 
-Complexitate:
-    enqueue (adaugare la final): O(1)
-    dequeue (extragere de la inceput): O(1)
-    parcurgere: O(n)
+    Jucătorii sunt citiți dintr-un fișier .csv și puși într-o coadă, în ordinea citirii. Fiecare primește un id unic, începând de la 0.
+    Harta este citită dintr-un fișier text și separată în trei matrice: valorile căsuțelor (liber/obstacol), costurile de trecere pe orizontală și costurile de trecere pe verticală.
+    Misiunile (punct de start → punct final) sunt citite dintr-un .csv și puse într-o stivă.
 
--Stiva (lista simplu inlantuita)
-    am implementat stiva cu o lista simplu inlantuita, cu un pointer la
-    varful stivei - top. Inserarea si extragerea se fac mereu din varf, respectand
-    principiul LIFO. Misiunile sunt stocate in stiva, astfel incat ultima misiune citita este prima scoasa.
+Un jucător are:
+Câmp	Tip	Observații
+prenume_nume	char *	alocat dinamic, cât e nevoie
+energie	float	
+abilitate	enum	NEUTRALITATE, REINCERCARE, RENASTERE
+id	int	asignat în ordinea citirii
+2. Turneul
 
-Complexitate:
+    Jucătorii sunt scoși din coadă și inserați într-un BST, ordonat după energie.
+    BST-ul este convertit într-un arbore de turneu: frunzele sunt jucători, iar nodurile interne sunt lupte (><) între jucătorii de sub ele.
+    Luptele se dau de la frunze spre rădăcină. Câștigă jucătorul cu energia mai mare (la egalitate, cel din stânga), iar energia lui devine:
 
-    push (adaugare în varf): O(1)
-    pop (extragere din varf): O(1)
+   E_castigator = max(E1, E2) + |E1 - E2|
 
--Arbore binar de cautare
-    jucatorrii sunt inserati in BST folosind energia ca si cheie de comparare. jucatorii cu enrgie mai mica se duc in stanga iar cei cu energie mai mare sau egala in subarborele drept. inserarea o fac recursiv.
+    La final se aleg primii k jucători după energia rămasă, unde k este cea mai mare putere a lui 2 pentru care k ≤ n (n = numărul de jucători).
 
-Complexitate:
-    inserare - O(h) unde h e inaltimea arborelui
+Exemplu pentru trei jucători cu energiile J0 = 15, J1 = 5, J2 = 17:
 
-    parcurgere postordine - O(n)
+       BST                        Arbore de turneu
 
--Arbore concurs
-    convertesc BST ul intr un arbore de tip concurs ce contine doua tipuri de noduri: noduri jucator si noduri lupta - care conecteaza doi jucatori ce urmeaza sa se lupte
-    conversia o realizez recursiv si tratez cele 4 cazuri. fiecare nod primeste un label ce concateneaza id urile jucatorilor implicati in lupta
+     J0 (15)                          J1J0J2
+     /     \                          /     \
+ J1 (5)   J2 (17)                  J1J0      J2
+                                  /    \
+                                J1      J0
 
-Complexitate: 
-    converie - O(n) n = nr noduri din BST
+    J1 (5) vs J0 (15) → câștigă J0, cu 15 + 10 = 25
+    J0 (25) vs J2 (17) → câștigă J0, cu 25 + 8 = 33
 
--Simularea luptelor
-    luptele se desfasoara de la frunzele arborelui de concurs catre radacina. la fiecare lupta avanseaza conform cerintei jucatorul cu energia mai mare ( in cazul egalitatii merge mai departe cel din stanga), iar energia castigatirului devine conform regulii : max dintre cei doi + mdulul diferentei energiilor lor
-    pierzatorii sunt colectati pe parcurs,iar castigatirul final ramane in radacina. selectez primii k jucatori sortati dupa energie sortati descresc cu qsort (k-cea mai mica putere a lui 2 < n)
+Clasament (k = 2): J0 33.00, J2 17.00
+3. Misiunile pe hartă
 
-Complexitate:
-    fight_and_collect - O(n) pt parcurgere si lupte
-    qsort - O(nlogn)
-    selectare primii k - O(nlogn)
+Fiecare câștigător, în ordinea descrescătoare a energiei, primește următoarea misiune scoasă din stivă. Drumul de la start la destinație este căutat cu A*. Fiecare pas consumă din energia jucătorului costul trecerii dintre căsuțe; dacă energia ajunge la 0 sau sub, misiunea eșuează.
 
-    pierzatorii de la fiecare lupta si castigatorul ii stochez intr un singur vector ca sa sortez cu qsort, am ales asta deoarece este eficientt - se parcurge arborele o singura data O(n) si sortarea finala O(nlogn)
+Exemplu de rezultat:
 
--MinHeap(coada cu prioritati)
-    pentru algoritmul astar am implementat un min heap ce mentine prioritatea ca elementul cu valoarea f minima este mereu pe prima pozitie.
+J0 - 21.00: [0, 0] -- [1, 0] -- [1, 1] -- [0, 1] -- [0, 2]
+J2: Nu s-a putut efectua misiunea
 
-Complexitate:
-    inserare - O(logn) - heap_push
-    extragere - O(log n) - heap_pop
-    accesare - O(1)
+Structuri de date și algoritmi
+Coadă (listă simplu înlănțuită)
 
--Algoritmul A*
-    este utilizat pentru gasirea celui mai scurt drum pe harta de la sursa la destinatia fiecarei misiuni.
-    functia de cost : f=g+min_cost*h
-    unde:
-    g-cost real de drum de la sursa la nodul n
-    h-distanta Manhattan de la n la destinatie
-    min_cost-costul minim din matricele de cost
-    la fiecare pas se extrage nodul cu f min din heap,se exploreaza vecinii si se actualizeaza costurile daca se gaseste un drum mai scurt.
+Păstrez pointerii front și rear, ca inserarea la final și extragerea de la început să se facă în timp constant.
+Operație	Complexitate
+enqueue (adăugare la final)	O(1)
+dequeue (extragere de la început)	O(1)
+parcurgere	O(n)
+Stivă (listă simplu înlănțuită)
 
-Complexitate:
-    timp: O(ElogV) unde 
-    V-nr de casute accesibilie
-    E-nr de muschh (maxim 4*V)
-    spatiu: O(V) pt matricele g,visited,prev_x,prev_y si heap
+Un singur pointer, top, către vârful stivei. Inserarea și extragerea se fac mereu din vârf (LIFO), deci ultima misiune citită este prima scoasă.
+Operație	Complexitate
+push (adăugare în vârf)	O(1)
+pop (extragere din vârf)	O(1)
+Arbore binar de căutare
 
-Reprezentarea hartii:
-harta este stocata in 3 matrice alocate dinamic:
--matrice val casute:n_lin n_col 0 pt liber, 1 pt obstacol
--matrice cost linii:n_lin si n_col-1 costurile orizontale
--matrice cost coloane:n_lin-1 si n_col pt costuri verticale
+Jucătorii sunt inserați recursiv, cu energia drept cheie: energie mai mică → subarborele stâng, energie mai mare sau egală → subarborele drept.
+Operație	Complexitate
+inserare	O(h), h = înălțimea arborelui (O(log n) în medie, O(n) dacă arborele degenerează)
+parcurgere postordine	O(n)
+Arborele de turneu
 
-Citirea se face cu strtok din fisier linie cu linie alternand intre linii ce contin valori si costurtile oriz/vert
+Conversia BST → arbore de turneu se face recursiv, de la frunze spre rădăcină. Pentru fiecare subarbore tratez patru cazuri:
 
-Toata memoria alocata este eliberata ulterior utilizatarii corespunzator cu ajutorul functiilor create
+    subarbore plin: frunza stângă și părintele se leagă printr-un nod de luptă, care se leagă apoi printr-un alt nod de luptă cu frunza dreaptă;
+    doar fiu stâng: frunza și părintele se leagă printr-un nod de luptă;
+    doar fiu drept: părintele și frunza se leagă printr-un nod de luptă;
+    fii care sunt deja noduri de luptă: se aplică aceleași reguli, nodurile de luptă fiind tratate ca noduri jucător.
 
-FISIERE SURSA:
-1.biblioteca.h - declaratii structuri si functii
-2.biblioteca.c - implementarea tuturor functiilor
-3.main.c-fluxul principal al programului
+Fiecare nod primește o etichetă formată din id-urile jucătorilor implicați (ex. J1J0J2), care poate fi afișată în postordine.
+Operație	Complexitate
+conversie	O(n), n = numărul de noduri din BST
+Simularea luptelor și selecția primilor k
+
+fight_and_collect parcurge arborele o singură dată: la fiecare nod de luptă decide câștigătorul, îi actualizează energia și pune învinsul într-un vector. Câștigătorul final rămâne în rădăcină și este adăugat și el în vector. Vectorul este apoi sortat descrescător după energie cu qsort, iar primii k jucători sunt cei de la începutul lui.
+Pas	Complexitate
+parcurgere și lupte	O(n)
+sortare cu qsort	O(n log n)
+selecția primilor k	O(k)
+total	O(n log n) timp, O(n) spațiu
+
+De ce așa: arborele este parcurs o singură dată, iar fiecare jucător ajunge în vector exact o dată, cu energia de după ultima lui luptă. Cum k este cea mai mare putere a lui 2 cu k ≤ n, avem mereu k > n/2, deci trebuie selectată oricum cel puțin jumătate din jucători. O selecție parțială (de exemplu cu un heap de dimensiune k) ar costa O(n log k) = O(n log n), adică la fel, așa că sortarea completă e cea mai simplă soluție, fără pierdere de eficiență.
+Min-heap (coadă cu priorități)
+
+Folosit de A*. Păstrează mereu în vârf nodul cu cea mai mică valoare f.
+Operație	Complexitate
+inserare (heap_push)	O(log n)
+extragere minim (heap_pop)	O(log n)
+acces la minim	O(1)
+Algoritmul A*
+
+Găsește cel mai scurt drum pe hartă de la sursa la destinația fiecărei misiuni. Funcția de cost:
+
+f(n) = g(n) + min_cost * h(n)
+h(n) = |n.x - d.x| + |n.y - d.y|      (distanța Manhattan)
+
+    g(n): costul real al drumului de la sursă până la n
+    h(n): distanța Manhattan de la n la destinația d
+    min_cost: cel mai mic cost din matricele de cost
+
+La fiecare pas extrag din heap nodul cu f minim, explorez cei (cel mult) 4 vecini accesibili și le actualizez costul dacă am găsit un drum mai scurt. Un vecin este adăugat în heap doar dacă jucătorului îi rămâne energie (energie - g > 0). Drumul este reconstruit la final din matricele prev_x / prev_y.
+
+De ce min_cost * h(n): orice pas pe hartă costă cel puțin min_cost, deci min_cost * h(n) nu depășește niciodată costul real rămas până la destinație. O euristică care nu supraestimează garantează că A* găsește drumul optim.
+	Complexitate
+timp	O(E log V), unde V = numărul de căsuțe accesibile și E = numărul de muchii (E ≤ 4V), deci O(V log V)
+spațiu	O(V), pentru matricele g, visited, prev_x, prev_y și heap
+Reprezentarea hărții
+
+Harta este stocată în trei matrice alocate dinamic:
+Matrice	Dimensiune	Conținut
+valori căsuțe	n_lin × n_col	0 = liber, 1 = obstacol
+cost linii	n_lin × (n_col - 1)	costurile de trecere pe orizontală
+cost coloane	(n_lin - 1) × n_col	costurile de trecere pe verticală
+
+Fișierul de intrare alternează două tipuri de linii: linii cu valorile căsuțelor intercalate cu costurile orizontale, și linii cu costurile verticale. Citirea se face linie cu linie, cu strtok.
+
+0  12  0  1  0
+6      3     5
+0  2   0  1  1
+12     7     4
+0  4   1  1  0
+
+Pentru exemplul de mai sus, harta are 3 × 3 căsuțe: linia 0 12 0 1 0 înseamnă căsuța (0,0) = 0, cost 12 până la (0,1), căsuța (0,1) = 0, cost 1 până la (0,2), căsuța (0,2) = 0.
+Formatul datelor de intrare
+
+Jucători (.csv):
+
+PRENUME NUME;ENERGIE;ABILITATE
+Mirel Alexandru;15;NEUTRALITATE
+Gabi Manea;5;RENASTERE
+Viorel-Bogdan Protop;17;REINCERCARE
+
+Misiuni (.csv), coordonate în matricea hărții:
+
+Xi;Yi;Xf;Yf
+2;0;0;0
+0;0;0;2
+
+Structura proiectului
+
+.
+├── src/
+│   ├── biblioteca.h   # declarațiile structurilor și ale funcțiilor
+│   ├── biblioteca.c   # implementarea tuturor funcțiilor
+│   └── main.c         # fluxul principal al programului
+├── Makefile
+└── README.md
+
+Compilare:
+
+make
+
+Gestionarea memoriei
+
+Toată memoria alocată dinamic (jucători, nume, noduri de coadă/stivă/arbore, matricele hărții, heap-ul) este eliberată după utilizare, prin funcții dedicate fiecărei structuri.
+
+valgrind --leak-check=full ./<executabil>
+
+Autor
+
+Poturlu David-Andrei
