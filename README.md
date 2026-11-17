@@ -1,46 +1,46 @@
-# Board Game în C
+# Board Game in C
 
-O simulare de board-game scrisă în C: jucătorii se înscriu, se luptă într-un turneu eliminatoriu construit pe arbori binari, iar câștigătorii primesc misiuni pe o hartă cu obstacole, unde drumul cel mai scurt este găsit cu algoritmul **A\***.
+A board game simulation written in C: players sign up, fight in a knockout tournament built on binary trees, and the winners are sent on missions across a map with obstacles, where the shortest path is found with the **A\*** algorithm.
 
-Proiectul este construit în jurul structurilor de date clasice, implementate de la zero: coadă, stivă, arbore binar de căutare, arbore de turneu și min-heap.
+The project is built around classic data structures, all implemented from scratch: queue, stack, binary search tree, tournament tree and min-heap.
 
 ---
 
-## Cum funcționează
+## How it works
 
-Simularea se desfășoară în trei etape.
+The simulation runs in three stages.
 
-### 1. Înscrierea jucătorilor, harta și misiunile
+### 1. Players, map and missions
 
-- **Jucătorii** sunt citiți dintr-un fișier `.csv` și puși într-o **coadă**, în ordinea citirii. Fiecare primește un `id` unic, începând de la 0.
-- **Harta** este citită dintr-un fișier text și separată în trei matrice: valorile căsuțelor (liber/obstacol), costurile de trecere pe orizontală și costurile de trecere pe verticală.
-- **Misiunile** (punct de start → punct final) sunt citite dintr-un `.csv` și puse într-o **stivă**.
+- **Players** are read from a `.csv` file and added to a **queue** in the order they are read. Each one gets a unique `id`, starting from 0.
+- **The map** is read from a text file and split into three matrices: cell values (free/obstacle), horizontal movement costs and vertical movement costs.
+- **Missions** (start point → end point) are read from a `.csv` file and pushed onto a **stack**.
 
-Un jucător are:
+A player has:
 
-| Câmp | Tip | Observații |
+| Field | Type | Notes |
 |---|---|---|
-| `prenume_nume` | `char *` | alocat dinamic, cât e nevoie |
+| `prenume_nume` | `char *` | dynamically allocated, only as much as needed |
 | `energie` | `float` | |
 | `abilitate` | `enum` | `NEUTRALITATE`, `REINCERCARE`, `RENASTERE` |
-| `id` | `int` | asignat în ordinea citirii |
+| `id` | `int` | assigned in reading order |
 
-### 2. Turneul
+### 2. The tournament
 
-1. Jucătorii sunt scoși din coadă și inserați într-un **BST**, ordonat după energie.
-2. BST-ul este convertit într-un **arbore de turneu**: frunzele sunt jucători, iar nodurile interne sunt lupte (`><`) între jucătorii de sub ele.
-3. Luptele se dau de la frunze spre rădăcină. Câștigă jucătorul cu energia mai mare (la egalitate, cel din stânga), iar energia lui devine:
+1. Players are dequeued and inserted into a **BST**, ordered by energy.
+2. The BST is converted into a **tournament tree**: leaves are players, and internal nodes are fights (`><`) between the players below them.
+3. Fights are resolved from the leaves up to the root. The player with more energy wins (the left one on a tie), and their energy becomes:
 
    ```
-   E_castigator = max(E1, E2) + |E1 - E2|
+   E_winner = max(E1, E2) + |E1 - E2|
    ```
 
-4. La final se aleg primii **k** jucători după energia rămasă, unde **k** este cea mai mare putere a lui 2 pentru care `k ≤ n` (n = numărul de jucători).
+4. At the end, the top **k** players by remaining energy are selected, where **k** is the largest power of 2 such that `k ≤ n` (n = number of players).
 
-**Exemplu** pentru trei jucători cu energiile J0 = 15, J1 = 5, J2 = 17:
+**Example** with three players with energies J0 = 15, J1 = 5, J2 = 17:
 
 ```
-       BST                        Arbore de turneu
+       BST                        Tournament tree
 
      J0 (15)                          J1J0J2
      /     \                          /     \
@@ -49,127 +49,129 @@ Un jucător are:
                                 J1      J0
 ```
 
-- J1 (5) vs J0 (15) → câștigă **J0**, cu 15 + 10 = **25**
-- J0 (25) vs J2 (17) → câștigă **J0**, cu 25 + 8 = **33**
+- J1 (5) vs J0 (15) → **J0** wins, with 15 + 10 = **25**
+- J0 (25) vs J2 (17) → **J0** wins, with 25 + 8 = **33**
 
-Clasament (k = 2): `J0 33.00`, `J2 17.00`
+Ranking (k = 2): `J0 33.00`, `J2 17.00`
 
-### 3. Misiunile pe hartă
+### 3. Missions on the map
 
-Fiecare câștigător, în ordinea descrescătoare a energiei, primește următoarea misiune scoasă din stivă. Drumul de la start la destinație este căutat cu **A\***. Fiecare pas consumă din energia jucătorului costul trecerii dintre căsuțe; dacă energia ajunge la 0 sau sub, misiunea eșuează.
+Each winner, in descending order of energy, receives the next mission popped from the stack. The path from start to destination is found with **A\***. Every step costs the player the movement cost between the two cells; if their energy drops to 0 or below, the mission fails.
 
-Exemplu de rezultat:
+Example output:
 
 ```
 J0 - 21.00: [0, 0] -- [1, 0] -- [1, 1] -- [0, 1] -- [0, 2]
 J2: Nu s-a putut efectua misiunea
 ```
 
+(The second line means "the mission could not be completed".)
+
 ---
 
-## Structuri de date și algoritmi
+## Data structures and algorithms
 
-### Coadă (listă simplu înlănțuită)
+### Queue (singly linked list)
 
-Păstrez pointerii `front` și `rear`, ca inserarea la final și extragerea de la început să se facă în timp constant.
+I keep both `front` and `rear` pointers, so inserting at the back and removing from the front both take constant time.
 
-| Operație | Complexitate |
+| Operation | Complexity |
 |---|---|
-| `enqueue` (adăugare la final) | O(1) |
-| `dequeue` (extragere de la început) | O(1) |
-| parcurgere | O(n) |
+| `enqueue` (add to the back) | O(1) |
+| `dequeue` (remove from the front) | O(1) |
+| traversal | O(n) |
 
-### Stivă (listă simplu înlănțuită)
+### Stack (singly linked list)
 
-Un singur pointer, `top`, către vârful stivei. Inserarea și extragerea se fac mereu din vârf (LIFO), deci ultima misiune citită este prima scoasă.
+A single `top` pointer to the top of the stack. Insertion and removal always happen at the top (LIFO), so the last mission read is the first one popped.
 
-| Operație | Complexitate |
+| Operation | Complexity |
 |---|---|
-| `push` (adăugare în vârf) | O(1) |
-| `pop` (extragere din vârf) | O(1) |
+| `push` (add to the top) | O(1) |
+| `pop` (remove from the top) | O(1) |
 
-### Arbore binar de căutare
+### Binary search tree
 
-Jucătorii sunt inserați recursiv, cu energia drept cheie: energie mai mică → subarborele stâng, energie mai mare sau egală → subarborele drept.
+Players are inserted recursively with energy as the key: lower energy → left subtree, greater or equal energy → right subtree.
 
-| Operație | Complexitate |
+| Operation | Complexity |
 |---|---|
-| inserare | O(h), h = înălțimea arborelui (O(log n) în medie, O(n) dacă arborele degenerează) |
-| parcurgere postordine | O(n) |
+| insertion | O(h), h = tree height (O(log n) on average, O(n) if the tree degenerates) |
+| post-order traversal | O(n) |
 
-### Arborele de turneu
+### Tournament tree
 
-Conversia BST → arbore de turneu se face recursiv, de la frunze spre rădăcină. Pentru fiecare subarbore tratez patru cazuri:
+The BST → tournament tree conversion is done recursively, bottom-up. For each subtree there are four cases:
 
-1. **subarbore plin**: frunza stângă și părintele se leagă printr-un nod de luptă, care se leagă apoi printr-un alt nod de luptă cu frunza dreaptă;
-2. **doar fiu stâng**: frunza și părintele se leagă printr-un nod de luptă;
-3. **doar fiu drept**: părintele și frunza se leagă printr-un nod de luptă;
-4. **fii care sunt deja noduri de luptă**: se aplică aceleași reguli, nodurile de luptă fiind tratate ca noduri jucător.
+1. **full subtree**: the left leaf and the parent are joined by a fight node, which is then joined by another fight node with the right leaf;
+2. **left child only**: the leaf and the parent are joined by a fight node;
+3. **right child only**: the parent and the leaf are joined by a fight node;
+4. **children that are already fight nodes**: the same rules apply, with fight nodes treated like player nodes.
 
-Fiecare nod primește o etichetă formată din id-urile jucătorilor implicați (ex. `J1J0J2`), care poate fi afișată în postordine.
+Each node gets a label made of the ids of the players involved (e.g. `J1J0J2`), which can be printed in post-order.
 
-| Operație | Complexitate |
+| Operation | Complexity |
 |---|---|
-| conversie | O(n), n = numărul de noduri din BST |
+| conversion | O(n), n = number of nodes in the BST |
 
-### Simularea luptelor și selecția primilor k
+### Simulating the fights and selecting the top k
 
-`fight_and_collect` parcurge arborele o singură dată: la fiecare nod de luptă decide câștigătorul, îi actualizează energia și pune învinsul într-un vector. Câștigătorul final rămâne în rădăcină și este adăugat și el în vector. Vectorul este apoi sortat descrescător după energie cu `qsort`, iar primii k jucători sunt cei de la începutul lui.
+`fight_and_collect` traverses the tree once: at each fight node it decides the winner, updates their energy and stores the loser in an array. The overall winner stays at the root and is added to the array as well. The array is then sorted by energy in descending order with `qsort`, and the top k players are the first k entries.
 
-| Pas | Complexitate |
+| Step | Complexity |
 |---|---|
-| parcurgere și lupte | O(n) |
-| sortare cu `qsort` | O(n log n) |
-| selecția primilor k | O(k) |
-| **total** | **O(n log n)** timp, O(n) spațiu |
+| traversal and fights | O(n) |
+| sorting with `qsort` | O(n log n) |
+| selecting the top k | O(k) |
+| **total** | **O(n log n)** time, O(n) space |
 
-**De ce așa:** arborele este parcurs o singură dată, iar fiecare jucător ajunge în vector exact o dată, cu energia de după ultima lui luptă. Cum k este cea mai mare putere a lui 2 cu `k ≤ n`, avem mereu `k > n/2`, deci trebuie selectată oricum cel puțin jumătate din jucători. O selecție parțială (de exemplu cu un heap de dimensiune k) ar costa O(n log k) = O(n log n), adică la fel, așa că sortarea completă e cea mai simplă soluție, fără pierdere de eficiență.
+**Why this approach:** the tree is traversed only once, and every player ends up in the array exactly once, with their energy after their last fight. Since k is the largest power of 2 with `k ≤ n`, we always have `k > n/2`, so at least half of the players have to be selected anyway. A partial selection (for example with a heap of size k) would cost O(n log k) = O(n log n), the same, so a full sort is the simplest solution with no loss in efficiency.
 
-### Min-heap (coadă cu priorități)
+### Min-heap (priority queue)
 
-Folosit de A\*. Păstrează mereu în vârf nodul cu cea mai mică valoare `f`.
+Used by A\*. Always keeps the node with the lowest `f` value at the top.
 
-| Operație | Complexitate |
+| Operation | Complexity |
 |---|---|
-| inserare (`heap_push`) | O(log n) |
-| extragere minim (`heap_pop`) | O(log n) |
-| acces la minim | O(1) |
+| insertion (`heap_push`) | O(log n) |
+| extract minimum (`heap_pop`) | O(log n) |
+| access minimum | O(1) |
 
-### Algoritmul A\*
+### The A\* algorithm
 
-Găsește cel mai scurt drum pe hartă de la sursa la destinația fiecărei misiuni. Funcția de cost:
+Finds the shortest path on the map from the source to the destination of each mission. The cost function:
 
 ```
 f(n) = g(n) + min_cost * h(n)
-h(n) = |n.x - d.x| + |n.y - d.y|      (distanța Manhattan)
+h(n) = |n.x - d.x| + |n.y - d.y|      (Manhattan distance)
 ```
 
-- `g(n)`: costul real al drumului de la sursă până la `n`
-- `h(n)`: distanța Manhattan de la `n` la destinația `d`
-- `min_cost`: cel mai mic cost din matricele de cost
+- `g(n)`: the actual cost of the path from the source to `n`
+- `h(n)`: the Manhattan distance from `n` to the destination `d`
+- `min_cost`: the smallest cost in the cost matrices
 
-La fiecare pas extrag din heap nodul cu `f` minim, explorez cei (cel mult) 4 vecini accesibili și le actualizez costul dacă am găsit un drum mai scurt. Un vecin este adăugat în heap doar dacă jucătorului îi rămâne energie (`energie - g > 0`). Drumul este reconstruit la final din matricele `prev_x` / `prev_y`.
+At each step I pop the node with the lowest `f` from the heap, explore its (at most) 4 reachable neighbours and update their cost if a shorter path was found. A neighbour is pushed onto the heap only if the player still has energy left (`energy - g > 0`). The path is rebuilt at the end from the `prev_x` / `prev_y` matrices.
 
-**De ce `min_cost * h(n)`:** orice pas pe hartă costă cel puțin `min_cost`, deci `min_cost * h(n)` nu depășește niciodată costul real rămas până la destinație. O euristică care nu supraestimează garantează că A\* găsește drumul optim.
+**Why `min_cost * h(n)`:** every step on the map costs at least `min_cost`, so `min_cost * h(n)` never exceeds the real remaining cost to the destination. A heuristic that never overestimates (an admissible heuristic) guarantees that A\* finds the optimal path.
 
-| | Complexitate |
+| | Complexity |
 |---|---|
-| timp | O(E log V), unde V = numărul de căsuțe accesibile și E = numărul de muchii (E ≤ 4V), deci O(V log V) |
-| spațiu | O(V), pentru matricele `g`, `visited`, `prev_x`, `prev_y` și heap |
+| time | O(E log V), where V = number of reachable cells and E = number of edges (E ≤ 4V), so O(V log V) |
+| space | O(V), for the `g`, `visited`, `prev_x`, `prev_y` matrices and the heap |
 
 ---
 
-## Reprezentarea hărții
+## Map representation
 
-Harta este stocată în trei matrice alocate dinamic:
+The map is stored in three dynamically allocated matrices:
 
-| Matrice | Dimensiune | Conținut |
+| Matrix | Size | Contents |
 |---|---|---|
-| valori căsuțe | `n_lin × n_col` | 0 = liber, 1 = obstacol |
-| cost linii | `n_lin × (n_col - 1)` | costurile de trecere pe orizontală |
-| cost coloane | `(n_lin - 1) × n_col` | costurile de trecere pe verticală |
+| cell values | `n_lin × n_col` | 0 = free, 1 = obstacle |
+| row costs | `n_lin × (n_col - 1)` | horizontal movement costs |
+| column costs | `(n_lin - 1) × n_col` | vertical movement costs |
 
-Fișierul de intrare alternează două tipuri de linii: linii cu valorile căsuțelor intercalate cu costurile orizontale, și linii cu costurile verticale. Citirea se face linie cu linie, cu `strtok`.
+The input file alternates two kinds of lines: lines with cell values interleaved with horizontal costs, and lines with vertical costs. It is read line by line with `strtok`.
 
 ```
 0  12  0  1  0
@@ -179,13 +181,13 @@ Fișierul de intrare alternează două tipuri de linii: linii cu valorile căsu�
 0  4   1  1  0
 ```
 
-Pentru exemplul de mai sus, harta are 3 × 3 căsuțe: linia `0 12 0 1 0` înseamnă căsuța (0,0) = 0, cost 12 până la (0,1), căsuța (0,1) = 0, cost 1 până la (0,2), căsuța (0,2) = 0.
+For the example above, the map has 3 × 3 cells: the line `0 12 0 1 0` means cell (0,0) = 0, cost 12 to (0,1), cell (0,1) = 0, cost 1 to (0,2), cell (0,2) = 0.
 
 ---
 
-## Formatul datelor de intrare
+## Input format
 
-**Jucători** (`.csv`):
+**Players** (`.csv`):
 
 ```
 PRENUME NUME;ENERGIE;ABILITATE
@@ -194,7 +196,7 @@ Gabi Manea;5;RENASTERE
 Viorel-Bogdan Protop;17;REINCERCARE
 ```
 
-**Misiuni** (`.csv`), coordonate în matricea hărții:
+**Missions** (`.csv`), coordinates in the map matrix:
 
 ```
 Xi;Yi;Xf;Yf
@@ -204,34 +206,34 @@ Xi;Yi;Xf;Yf
 
 ---
 
-## Structura proiectului
+## Project structure
 
 ```
 .
 ├── src/
-│   ├── biblioteca.h   # declarațiile structurilor și ale funcțiilor
-│   ├── biblioteca.c   # implementarea tuturor funcțiilor
-│   └── main.c         # fluxul principal al programului
+│   ├── biblioteca.h   # struct and function declarations
+│   ├── biblioteca.c   # implementation of all functions
+│   └── main.c         # main program flow
 ├── Makefile
 └── README.md
 ```
 
-## Compilare
+## Build
 
 ```bash
 make
 ```
 
-## Gestionarea memoriei
+## Memory management
 
-Toată memoria alocată dinamic (jucători, nume, noduri de coadă/stivă/arbore, matricele hărții, heap-ul) este eliberată după utilizare, prin funcții dedicate fiecărei structuri. Poți verifica asta cu:
+All dynamically allocated memory (players, names, queue/stack/tree nodes, map matrices, the heap) is freed after use, through a dedicated function for each structure. You can check this with:
 
 ```bash
-valgrind --leak-check=full ./<executabil>
+valgrind --leak-check=full ./<executable>
 ```
 
 ---
 
-## Autor
+## Author
 
 **Poturlu David-Andrei**
